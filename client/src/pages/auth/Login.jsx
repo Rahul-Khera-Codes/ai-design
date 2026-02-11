@@ -16,7 +16,7 @@ function Login() {
     setError(null)
 
     try {
-      await authRequest('/auth/login', { email, password })
+      await authRequest('/api/auth/login', { email, password })
       navigate('/dashboard')
     } catch (err) {
       setError(err.message || 'Invalid email or password. Please try again.')

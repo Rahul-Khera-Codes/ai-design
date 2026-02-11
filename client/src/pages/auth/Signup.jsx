@@ -22,7 +22,7 @@ function Signup() {
     }
 
     try {
-      const response = await authRequest('/auth/register', { email, password })
+      const response = await authRequest('/api/auth/register', { email, password })
       setTimeout(() => {
         navigate('/login', { state: { message: 'Account created successfully! Please sign in.' } })
       }, 1000)
