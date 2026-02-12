@@ -14,6 +14,12 @@ def _parse_origins(raw: str | None) -> list[str]:
     return [origin.strip() for origin in raw.split(",") if origin.strip()]
 
 
+def login_huggingface():
+    from huggingface_hub import login
+
+    login(token=os.getenv("HUGGINGFACE_API_TOKEN"))
+
+
 def create_app() -> FastAPI:
     app = FastAPI(title="ai-ipvoyage API", version="0.1.0")
 
@@ -44,7 +50,34 @@ def create_app() -> FastAPI:
 
     from app.routes.auth import router as auth_router
     app.include_router(auth_router)
+    
+    from app.routes.chatbot import router as chatbot_router
+    app.include_router(chatbot_router)
 
+    @app.on_event("startup")
+    def startup_event():
+        """Initialize chatbot services on startup."""
+        try:
+            # Initialize services (lazy loading, so this just ensures they're ready)
+            from app.chatbot.services.pinecone_service import get_pinecone_service
+            from app.chatbot.services.llm_service import get_llm_service
+            from app.chatbot.services.embedding_service import get_embedding_service
+            
+            # Initialize Pinecone (will connect on first use)
+            try:
+                pinecone_service = get_pinecone_service()
+                print("✅ Pinecone service initialized")
+            except Exception as e:
+                print(f"⚠️  Pinecone initialization warning: {e}")
+            
+            # Note: LLM and embedding models will load on first use (lazy loading)
+            print("✅ Chatbot services ready (models will load on first request)")
+
+            login_huggingface()
+            
+        except Exception as e:
+            print(f"⚠️  Chatbot service initialization warning: {e}")
+    
     @app.on_event("shutdown")
     def shutdown_event():
         """Close database connections on app shutdown."""
